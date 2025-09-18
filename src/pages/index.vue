@@ -3,8 +3,8 @@
         <div class="bg-image"></div>
         <v-row align="center" justify="left">
             <v-card width="600" class="rounded-lg d-flex flex-column align-center pa-6 main-card" max-width="650">
-                <v-card-title class="text-h6 text-md-h5 text-lg-h4 text-center">
-                    INFORMATION SYSTEM
+                <v-card-title class="text-h6 text-md-h5 text-lg-h4 text-center text-wrap custom-line-height">
+                    ELECTRONIC ATTENDANCE MANAGEMENT SYSTEM
                 </v-card-title>
                 
                 <v-card-subtitle class="text-center" style="margin-bottom: 10px;">
@@ -180,6 +180,10 @@ const login = () => {
     .v-row {
         width: 94vw !important;
     }
+
+    .v-btn {
+        width: 70vw !important;
+    }
 }
 
 .v-card-title {
@@ -191,5 +195,9 @@ const login = () => {
     font-size: 14px;
     font-weight: 600;
     color: #0E4572;
+}
+
+.custom-line-height {
+    line-height: 1; /* Adjust as needed, e.g., 1.2, 2, or 32px */
 }
 </style>

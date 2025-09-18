@@ -8,16 +8,16 @@
                     <v-col>
                         <v-text-field
                             v-model="model.name"
-                            label="Name"
+                            label="Agency Name"
                             variant="outlined"
                             required
                         ></v-text-field>
 
-                        <v-text-field
-                            v-model="model.desc"
-                            label="Description"
+
+						<v-text-field
+                            v-model="model.acronym"
+                            label="Agency Abbreviation"
                             variant="outlined"
-                            required
                         ></v-text-field>
                     </v-col>
                 </v-row>
@@ -44,11 +44,15 @@
     </v-dialog>
 </template>
 <script setup>
-import { computed, onBeforeMount, reactive } from 'vue'
+import { computed, onBeforeMount, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 
 const store = useStore()
 let that = self;
+
+const loading = ref(false);
+const isReadOnly = ref(true);
+const name = ref('');
 
 const modalState = computed(() => {
 	return store.getters['modals/activeModal']
@@ -63,8 +67,12 @@ const model = reactive({
 	isLoading: false,
 	isSaved: false,
 	name: '',
-	desc: '',
+	acronym: '',
 })
+
+const rules = {
+	acronymMax: value => (value || '').length <= 10 || 'Acronym must be 10 characters or less',
+}
 
 const params = reactive({
 	title: modalParams.value.title,
@@ -81,6 +89,15 @@ const params = reactive({
 	cancelButtonClass: modalParams.value.cancelButtonClass,
 })
 
+function getAcronym(name) {
+	if (!name) return '';
+    return name
+        .split(' ')
+        .filter(word => word.length > 0)
+        .map(word => word[0].toUpperCase())
+        .join('');
+}
+
 const closeModal = () => {
 	store.dispatch('modals/close')
 }
@@ -88,27 +105,30 @@ const closeModal = () => {
 const onSubmit = () => {
 	model.isSaved = true;
 
-	store
-		.dispatch(params.action, {
-			name: model.name,
-			email: model.email
-		})
-		.then((response) => {
-			that.emitter.emit(params.action);
-			Toast.fire({
-				icon: 'success',
-				title: 'User successfully registered!'
-			});
-			store.dispatch('modals/close');
-			model.isSaved = false;
-		})
-		.catch((error) => {
-			Toast.fire({
-				icon: 'error',
-				title: 'Something went wrong',
-			});
+    store
+        .dispatch(params.action, {
+            agency_name: model.name,
+            agency_abbr: model.acronym,
+            status: 'Active',
+        })
+        .then((response) => {
+            Toast.fire({
+                icon: 'success',
+                title: 'Database successfully registered!'
+            });
 
-			model.isSaved = false;
-		})
+            that.emitter.emit(params.action);
+            store.dispatch('modals/close');
+            model.isSaved = false;
+        })
+        .catch((error) => {
+            Toast.fire({
+                icon: 'error',
+                title: 'Something went wrong',
+            });
+
+            model.isSaved = false;
+            store.dispatch('modals/close');
+        })
 }
 </script>

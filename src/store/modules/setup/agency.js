@@ -59,7 +59,7 @@ const actions = {
 		{ commit },
 		{ page = 1, search = null, itemsPerPage = 15, orderBy = [], majorTypeId } = {},
 	) {
-		const { data, meta } = await axios.get('document/incoming')
+		const { data, meta } = await axios.get('v1/agency')
 
 		commit('SET_LIST', data)
 		commit('SET_META', meta)
@@ -71,17 +71,17 @@ const actions = {
 	},
 
 	async update({ commit }, model) {
-		const response = await axios.put(`document/incoming/${model.id}`, model)
+		const response = await axios.patch(`v1/agency/${model.agency_id}`, model)
 
 		return response
 	},
 	async save({ commit }, model) {
-		const response = await axios.post('document/incoming', model)
+		const response = await axios.post('v1/agency', model)
 
 		return response
 	},
 	async destroy({ commit }, model) {
-		const response = await axios.delete(`document/incoming/${model.id}`)
+		const response = await axios.delete(`v1/agency/${model.agency_id}`)
 
 		return response
 	},

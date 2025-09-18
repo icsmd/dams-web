@@ -7,7 +7,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig({
 	plugins: [vue(), vueDevTools()],
 	define: { 'process.env': {} },
-	envPrefix: 'APP_',
+	envPrefix: 'DAMS_',
 	build: {
 		minify: 'esbuild',
 		sourcemap: false,
@@ -19,8 +19,8 @@ export default defineConfig({
 		},
 	},
 	server: {
-		host: process.env.APP_BASE_URL || 'localhost',
-		port: process.env.APP_BASE_PORT || 3000,
+		host: process.env.DAMS_BASE_URL || 'localhost',
+		port: process.env.DAMS_BASE_PORT || 3000,
 		watch: {
 			usePolling: true,
 		},

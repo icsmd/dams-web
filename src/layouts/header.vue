@@ -1,6 +1,6 @@
 <template>
     <v-app>
-        <v-app-bar app :elevation="2" color="blue-grey-darken-2">
+        <v-app-bar app :elevation="2" color="brown-darken-2">
             <!-- Hamburger menu for mobile -->
             <v-app-bar-nav-icon
                 class="d-md-none"
@@ -10,16 +10,33 @@
                 <img src="/img/NICA.png" width=40 height=40 style="margin-left: 5px"></img>
             </template>
             <v-app-bar-title :backgroundColor="backgroundColor">
-                Information System Template
+                DIGITAL ATTENDANCE MONITORING SYSTEM
             </v-app-bar-title>
             <template v-slot:append>
                 <v-btn icon="mdi mdi-bell"></v-btn>
+                <v-menu>
+                    <template #activator="{ props }">
+                        <v-btn v-bind="props" icon>
+                            <v-avatar size="32">
+                                <img
+                                    src="/public/img/user.jpg"
+                                    alt="User"
+                                    style="width: 100%; height: 100%; object-fit: cover;"
+                                />
+                            </v-avatar>
+                        </v-btn>
+                    </template>
+                    <v-list>
+                        <v-list-item title="View Profile" class="custom-list-item-gap" prepend-icon="mdi mdi-account" @click="openProfile"></v-list-item>
+                        <v-list-item title="Logout" class="custom-list-item-gap" prepend-icon="mdi mdi-logout-variant" @click="logout"></v-list-item>
+                    </v-list>
+                </v-menu>
             </template>
         </v-app-bar>
         <v-navigation-drawer
             v-model="drawer"
             app
-            color="blue-grey-darken-4"
+            color="brown-darken-4"
             width="320"
             :permanent="$vuetify.display.mdAndUp"
             :temporary="!$vuetify.display.mdAndUp"
@@ -40,9 +57,10 @@
                         v-if="Array.isArray(item.children)"
                         :prepend-icon="item.icon"
                         :title="item.title"
+                        class="h-4"
                     >
                         <template #activator="{ props }">
-                            <v-list-item v-bind="props" :title="item.title" :prepend-icon="item.icon" />
+                            <v-list-item v-bind="props" :title="item.title" :prepend-icon="item.icon" class="text-h6" />
                         </template>
                         <v-list-item
                             v-for="child in item.children"
@@ -51,7 +69,7 @@
                             link
                             :title="child.title"
                             :prepend-icon="child.icon"
-                            class="no-indent"
+                            class="no-indent text-h6"
                         />
                     </v-list-group>
                     <v-list-item
@@ -60,26 +78,10 @@
                         link
                         :title="item.title"
                         :prepend-icon="item.icon"
+                        class="text-h6"
                     />
                 </template>
             </v-list>
-            <template v-slot:append>
-                <div 
-                    class="pa-2"
-                >
-                    <v-btn 
-                        prepend-icon="mdi mdi-logout-variant"
-                        :disabled="loading"
-                        :loading="loading"
-                        color="red-darken-2"
-                        variant="flat"
-                        block 
-                        @click="logout"
-                    >
-                    Logout
-                    </v-btn>
-                </div>
-            </template>
         </v-navigation-drawer>
         <v-main class="main-scroll">
             <RouterView />
@@ -100,30 +102,15 @@ const display = useDisplay();
 const menuItems = [
     { title: "User Manual", icon: "mdi-information", routeName: "not-found" },
     { title: "Dashboard", icon: "mdi mdi-view-dashboard", routeName: "main-menu" },
+    { title: "ManCom", icon: "mdi mdi-account-group", routeName: "Man-com" },
+    { title: "NIC", icon: "mdi mdi-account-group", routeName: "Nic" },
     {
-        title: "Document Management",
-        icon: "mdi-folder",
-        children: [
-            { title: "Document List", icon: "mdi mdi-file-document-multiple", routeName: "document-management" },
-            { title: "Document Setup", icon: "mdi mdi-cog", routeName: "document-management-settings" }
-        ]
-    },
-        {
         title: "System Setup",
         icon: "mdi mdi-cogs",
         children: [
-            { title: "Intel Primary Type", icon: "mdi mdi-cog", routeName: "intel-primary-type" },
-            { title: "Intel Secondary Type", icon: "mdi mdi-cog", routeName: "not-found" }
-        ]
-    },
-    {
-        title: "Account Management",
-        icon: "mdi mdi-account-circle",
-        children: [
-            { title: "User Management", icon: "mdi mdi-account-group", routeName: "user-management" },
-            { title: "Position", icon: "mdi mdi-badge-account", routeName: "not-found" },
-            { title: "Roles and Access", icon: "mdi mdi-shield-account", routeName: "not-found" },
-            { title: "Audit Trail", icon: "mdi-history", routeName: "not-found" },
+            { title: "Person", icon: "mdi mdi-account-box", routeName: "system-person" },
+            { title: "Designation", icon: "mdi mdi-badge-account", routeName: "system-designation" },
+            { title: "Agency", icon: "mdi mdi-office-building", routeName: "system-agency" },
         ]
     },
 ];
@@ -134,6 +121,10 @@ const backgroundColor = computed(() => store.getters['references/backgroundColor
 
 const logout = () => {
     router.push({ name: 'Login' });
+}
+
+const openProfile = () => {
+    router.push({ name: 'profile' });
 }
 </script>
 
@@ -147,5 +138,20 @@ const logout = () => {
   overflow-y: auto;
   /* Optional: Prevent horizontal scroll */
   overflow-x: hidden;
+}
+
+::v-deep(.custom-list-item-gap .v-list-item__prepend),
+::v-deep(.custom-list-item-gap .v-list-item__content) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+::v-deep(.custom-list-item-gap .v-list-item-title) {
+  font-size: 14px !important;
+}
+
+.my-custom-title .v-list-item__title {
+  font-size: 2rem; /* or any specific size you want */
+  font-weight: bold;
 }
 </style>

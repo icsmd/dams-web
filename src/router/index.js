@@ -1,15 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import management from '@/router/routes/management'
 import core from '@/router/routes/core'
-import document from '@/router/routes/document'
+import mancom from '@/router/routes/mancom'
+import nic from '@/router/routes/nic'
+import setup from '@/router/routes/setup'
 
 let routes = []
 
 routes = routes.concat(
-	management, 
 	core,
-	document,
+	mancom,
+	nic,
+	setup,
 );
 
 const router = createRouter({
@@ -19,7 +21,7 @@ const router = createRouter({
 
 // Set the document title and handle authentication checks before each route navigation
 router.beforeEach((to, from, next) => {
-	document.title = `${import.meta.env.APP_NAME || 'Vue Template'} ${
+	document.title = `${import.meta.env.DAMS_APP_NAME || 'Electronic Attendance Management System'} ${
 		to.meta.title ? '| ' + to.meta.title : ''
 	}`
 

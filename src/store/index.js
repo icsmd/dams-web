@@ -11,10 +11,12 @@ import VuexPersist from 'vuex-persist'
 // Cores Import
 import modals from './modules/core/modals'
 import references from './modules/core/references'
+import agency from './modules/setup/agency'
+import person from './modules/setup/person'
 
 // Features Import
-import users from './modules/auth/user'
-import incoming from './modules/document/incoming'
+// import users from './modules/auth/user'
+// import incoming from './modules/document/incoming'
 
 
 const vuexLocalStorage = new VuexPersist({
@@ -27,8 +29,8 @@ export default createStore({
 	modules: {
 		modals,
 		references,
-		users,
-		incoming,
+		agency,
+		person,
 	},
 	plugins: [vuexLocalStorage.plugin],
 })
