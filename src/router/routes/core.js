@@ -1,14 +1,8 @@
-const login = () => import('@/pages/index.vue')
+
 const mainMenu = () => import('@/pages/core/index.vue')
 const development = () => import('@/pages/notFound.vue')
 
 const routes = [
-	{
-		path: '/',
-		name: 'Login',
-		meta: { requiresAuth: true, layout: 'blank', title: 'Login' },
-		component: login,
-	},
 	{
 		path: '/Main-Menu',
 		name: 'main-menu',

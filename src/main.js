@@ -26,11 +26,17 @@ import 'vuetify/styles'
 
 axios.defaults.baseURL = `${import.meta.env.DAMS_API_URL}`
 
-// const token = localStorage.getItem('token');
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
-// if (token) {
-//   axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-// }
+const token = getCookie('session_token');
+
+if (token) {
+  axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+}
 
 const vuetify = createVuetify({
 	icons: {
