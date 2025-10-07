@@ -12,43 +12,44 @@
                     <p>Please login to your account</p>
                 </v-card-subtitle>
 
-                <v-text-field
-                    label="Email Address"
-                    prepend-inner-icon="mdi mdi-account"
-                    variant="outlined"
-                    type="email"
-                    class="w-100"
-                    v-model="model.email"
-                ></v-text-field>
-                
-                <v-text-field
-                    label="Password"
-                    prepend-inner-icon="mdi mdi-lock"
-                    variant="outlined"
-                    type="password"
-                    class="w-100"
-                    v-model="model.password"
-                ></v-text-field>
-                
-                <div class="text-end w-100 mb-2">
-                    <span class="cursor-pointer forgot-text" @click="forgotPassword()">Forgot Password ?</span>
-                </div>
+                <form @submit.prevent="login()" class="w-100">
+                    <v-text-field
+                        label="Email Address"
+                        prepend-inner-icon="mdi mdi-account"
+                        variant="outlined"
+                        type="email"
+                        class="w-100"
+                        v-model="model.email"
+                    ></v-text-field>
+                    
+                    <v-text-field
+                        label="Password"
+                        prepend-inner-icon="mdi mdi-lock"
+                        variant="outlined"
+                        type="password"
+                        class="w-100"
+                        v-model="model.password"
+                    ></v-text-field>
+                    
+                    <div class="text-end w-100 mb-2">
+                        <span class="cursor-pointer forgot-text" @click="forgotPassword()">Forgot Password ?</span>
+                    </div>
 
-                <v-card-actions class="justify-center">
-                    <v-btn
-                        :disabled="model.isLoading == true"
-                        :loading="model.isLoading == true"
-                        class="text-none mb-4"
-                        color="indigo-darken-3"
-                        size="x-large"
-                        variant="flat"
-                        width="550"
-                        @click="login()"
-                    >
-                        Login
-                    </v-btn>
-                </v-card-actions>
-
+                    <v-card-actions class="justify-center">
+                        <v-btn
+                            :disabled="model.isLoading == true"
+                            :loading="model.isLoading == true"
+                            class="text-none mb-4"
+                            color="indigo-darken-3"
+                            size="x-large"
+                            variant="flat"
+                            width="550"
+                            @click="login()"
+                        >
+                            Login
+                        </v-btn>
+                    </v-card-actions>
+                </form>
             </v-card>
         </v-row>
     </v-container>
