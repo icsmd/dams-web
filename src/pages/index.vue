@@ -14,10 +14,10 @@
 
                 <form @submit.prevent="login()" class="w-100">
                     <v-text-field
-                        label="Email Address"
+                        label="Username"
                         prepend-inner-icon="mdi mdi-account"
                         variant="outlined"
-                        type="email"
+                        type="text"
                         class="w-100"
                         v-model="model.email"
                     ></v-text-field>
@@ -44,7 +44,7 @@
                             size="x-large"
                             variant="flat"
                             width="550"
-                            @click="login()"
+                            type="submit" 
                         >
                             Login
                         </v-btn>
