@@ -16,64 +16,65 @@
                     <v-row class="mb-2 mt-2" dense>
                         <v-col>
                             <v-text-field
-                                v-model="model.designation"
+                                v-model="model.name"
                                 variant="outlined"
-                                class="mb-2"
-                                :rules="[v => !!v || 'Designation is required']"
+                                :rules="[v => !!v || 'Prefix is required']"
+                                class="mb-3"
                                 required
                             >
                                 <template v-slot:label>
                                     <div>
-                                        Designation<span class="text-red">*</span>
+                                        Event Title<span class="text-red">*</span>
                                     </div>
                                 </template>
                             </v-text-field>
 
                             <v-text-field
-                                v-model="model.office"
+                                v-model="model.venue"
                                 variant="outlined"
-                                class="mb-2"
-                                :rules="[v => !!v || 'Office is required']"
+                                :rules="[v => !!v || 'Prefix is required']"
+                                class="mb-3"
                                 required
                             >
                                 <template v-slot:label>
                                     <div>
-                                        Office<span class="text-red">*</span>
+                                        Event Venue<span class="text-red">*</span>
                                     </div>
                                 </template>
                             </v-text-field>
 
-                            <v-combobox
-                                clearable
-                                :items="persons"
-                                v-model="model.person"
-                                :item-title="item => item.fullname"
+                            <v-text-field
+                                :model-value="formattedDate"
+                                label="Event Date"
+                                prepend-icon=""
                                 variant="outlined"
-                                :rules="[v => !!v || 'Person is required']"
-                                class="mb-2"
+                                readonly
                             >
-                                <template v-slot:label>
-                                    <div>
-                                        Person<span class="text-red">*</span>
-                                    </div>
+                                <template v-slot:prepend-inner>
+                                    <v-icon color="grey-darken-4" class="mr-2">mdi-calendar-month</v-icon>
                                 </template>
-                            </v-combobox>
+                                <v-dialog v-model="showDialogDate" activator="parent" width="auto">
+                                    <v-date-picker
+                                        v-model="model.date"
+                                        color="brown-darken-2"
+                                    ></v-date-picker>
+                                </v-dialog>
+                            </v-text-field>
 
-                            <v-combobox
-                                clearable
-                                :items="meetings"
-                                v-model="model.meeting"
-                                :item-title="item => item.meeting_title"
+                            <v-text-field
+                                :model-value="model.time"
+                                label="Event Time"
+                                prepend-icon=""
                                 variant="outlined"
-                                :rules="[v => !!v || 'Meeting is required']"
-                                class="mb-2"
+                                readonly
                             >
-                                <template v-slot:label>
-                                    <div>
-                                        Meeting<span class="text-red">*</span>
-                                    </div>
+                                <template v-slot:prepend-inner>
+                                    <v-icon color="grey-darken-4" class="mr-2">mdi-clock-time-four-outline</v-icon>
                                 </template>
-                            </v-combobox>
+                                <v-dialog v-model="showDialog" activator="parent" width="auto">
+                                    <v-time-picker v-model="model.time" format="24hr"></v-time-picker>
+                                </v-dialog>
+                            </v-text-field>
                         </v-col>
                     </v-row>
                     <div class="d-flex justify-end align-center">
@@ -110,8 +111,9 @@ const loading = ref(false);
 const isReadOnly = ref(true);
 const name = ref('');
 const form = ref(null);
-const persons = ref([]);
-const meetings = ref([]);
+const showDialog = ref(false)
+const showDialogDate = ref(false)
+const fectchData = ref([]);
 
 const modalState = computed(() => {
 	return store.getters['modals/activeModal']
@@ -125,10 +127,12 @@ const model = reactive({
 	dialog: true,
 	isLoading: false,
 	isSaved: false,
-	designation: null,
-    office: null,
-    person: null,
-    meeting: null,
+	name: null,
+    venue: null,
+	date: null,
+    time: null,
+    meeting_id: null,
+    event_id: null,
 })
 
 const params = reactive({
@@ -144,6 +148,7 @@ const params = reactive({
 	borderTopClass: modalParams.value.borderTopClass,
 	confirmButtonClass: modalParams.value.confirmButtonClass,
 	cancelButtonClass: modalParams.value.cancelButtonClass,
+    meeting_id: modalParams.value.meeting_id,
     user: modalParams.value.user,
 })
 
@@ -151,21 +156,35 @@ const closeModal = () => {
 	store.dispatch('modals/close')
 }
 
+const formattedDate = computed(() => {
+    if (!model.date) {
+        return '';
+    }
+
+    const date = new Date(model.date);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+});
+
 const onSubmit = () => {
 	model.isSaved = true;
 
     store
         .dispatch(params.action, {
-            designation: model.designation,
-            office: model.office,
-            meeting_id: model.meeting.meeting_id,
-            person_id: model.person.person_id,
-            status: 'Active',
+            event_id: model.event_id,
+            meeting_id: model.meeting_id,
+            event_title: model.name,
+            event_venue: model.venue,
+            event_date: formattedDate.value,
+            event_time: model.time,
         })
         .then((response) => {
             Toast.fire({
                 icon: 'success',
-                title: 'Designation successfully registered!'
+                title: 'Event successfully created!'
             });
 
             that.emitter.emit(params.action);
@@ -191,33 +210,22 @@ const validateAndSubmit = async () => {
     }
 };
 
-const getPersons = async () => {
-    model.isLoading = true; 
+const getData = async () => {
     try {
-        const response = await axios.get("v1/person");
-        persons.value = response.data.data;
+        const response = await axios.get(`v1/events/${params.actionParams.event_id}`);
+            fectchData.value = response.data.data;
+            model.event_id = fectchData.value[0].event_id;
+            model.name = fectchData.value[0].event_title;
+            model.venue = fectchData.value[0].event_venue;
+            model.date = fectchData.value[0].event_date;
+            model.time = fectchData.value[0].event_time;
+            model.meeting_id = fectchData.value[0].meeting_id;
     } catch (error) {
         console.error("Error fetching list:", error);
-    } finally {
-        model.isLoading = false;
     }
-}
-
-const getMeetings = async () => {
-    model.isLoading = true; 
-    try {
-        const response = await axios.get("v1/meeting");
-        meetings.value = response.data.data;
-    } catch (error) {
-        console.error("Error fetching list:", error);
-    } finally {
-        model.isLoading = false;
-    }
-}
+};
 
 onBeforeMount(async () => {
-    await getPersons();
-    await getMeetings();
+    await getData();
 });
-
 </script>

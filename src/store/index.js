@@ -13,6 +13,10 @@ import modals from './modules/core/modals'
 import references from './modules/core/references'
 import agency from './modules/setup/agency'
 import person from './modules/setup/person'
+import meeting from './modules/mancom/meeting'
+import event from './modules/mancom/event'
+import designation from './modules/setup/designation'
+import attendance from './modules/mancom/attendance'
 
 // Features Import
 // import users from './modules/auth/user'
@@ -31,6 +35,10 @@ export default createStore({
 		references,
 		agency,
 		person,
+		meeting,
+		event,
+		designation,
+		attendance,
 	},
 	plugins: [vuexLocalStorage.plugin],
 })

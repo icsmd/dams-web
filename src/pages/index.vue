@@ -58,6 +58,7 @@
 import { computed, onBeforeMount, onMounted, reactive, watch, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useStore } from "vuex";
+import pako from "pako"
 
 const store = useStore();
 const router = useRouter();
@@ -81,25 +82,29 @@ const forgotPassword = () => {
     model.isLoading = false;
 }
 
-const login = () => {
+const login = async () => {
     model.isLoading = true;
 
     try {
-        // axios.post("/login", {
-        //     email: model.email,
-        //     password: model.password,
-        // });
+        let response = await axios.post("http://ciamis.infosys.local:8001/api/v1/auth/authenticate", {
+            username: btoa(model.email),
+            password: btoa(model.password),
+        });
+        let result = response.data.data;
+        let tokenDetails = decompressPayload(result.token_details);
+        let expiryTime = tokenDetails.expires_at;
+        setCookie('session_user', result.user_details, expiryTime);
+        setCookie('session_token', result.token_details, expiryTime);
+        let firstName = decompressPayload(result.user_details).first_name;
 
-        // console.log('result:' + axios)
-
-        // axios.get("/");
+        axios.get("/");
         router.push({
             name: "main-menu",
         });
 
         Toast.fire({
             icon: "success",
-            title: "Welcome User!",
+            title: "Welcome " + firstName + "!",
         });
     } catch (error) {
         Toast.fire({
@@ -109,6 +114,20 @@ const login = () => {
     };
 
     model.isLoading = false;
+}
+
+const decompressPayload = (base64String) => {
+  let binary = atob(base64String);
+  let bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  let json = pako.inflate(bytes, { to: "string" });
+
+  return JSON.parse(json);
+}
+
+const setCookie = (name, value, expiryDateTimeString) => {
+  let date = new Date(expiryDateTimeString.replace(" ", "T"));
+  let expires = "; expires=" + date.toUTCString();
+  document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 </script>
 

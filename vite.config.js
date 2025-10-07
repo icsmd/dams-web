@@ -19,7 +19,7 @@ export default defineConfig({
 		},
 	},
 	server: {
-		host: process.env.DAMS_BASE_URL || 'localhost',
+		host: process.env.DAMS_BASE_URL || 'eams-dev.infosys.local',
 		port: process.env.DAMS_BASE_PORT || 3000,
 		watch: {
 			usePolling: true,

@@ -104,6 +104,7 @@ import { onBeforeMount, ref, onMounted, computed } from "vue";
 import { useStore } from "vuex";
 import { useRouter, useRoute } from "vue-router";
 import { useDisplay } from "vuetify";
+import pako from "pako";
 
 import CreateAgencyModal from "@/components/setup/agency/CreateAgencyModal.vue";
 import UpdateAgencyModal from "@/components/setup/agency/UpdateAgencyModal.vue";
@@ -115,6 +116,12 @@ const route = useRoute();
 const that = self;
 const display = useDisplay();
 const items = ref([]);
+
+const model = reactive({
+    userDetails: null,
+    userPid: null,
+    tokenDetails: null,
+});
 
 const getBreadcrumbs = [
     { title: 'Home', disabled: false, href: '/Main-Menu' },
@@ -153,6 +160,7 @@ const addItem = () => {
             action: "agency/save",
             confirmButtonText: "Save",
             cancelButtonText: "Cancel",
+            user: getFullNameInitial(model.userDetails),
         },
     });
 }
@@ -166,6 +174,7 @@ const updateItem = (item) => {
             confirmButtonText: "Update",
             cancelButtonText: "Cancel",
             actionParams: item,
+            user: getFullNameInitial(model.userDetails),
         },
     });
 }
@@ -181,8 +190,33 @@ const deleteItem = (item) => {
             confirmButtonText: "Delete",
             cancelButtonText: "Cancel",
             actionParams: item,
+            user: getFullNameInitial(model.userDetails),
         },
     });
+}
+
+const getCookie = (name) => {
+    let nameEQ = name + "=";
+    let ca = document.cookie.split(';');
+    for(let i=0;i < ca.length;i++) {
+        let c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+const decompressPayload = (base64String) => {
+  let binary = atob(base64String);
+  let bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  let json = pako.inflate(bytes, { to: "string" });
+
+  return JSON.parse(json);
+}
+
+const getUserSession = () => {
+    model.userDetails = decompressPayload(getCookie('session_user'));
+    model.tokenDetails = decompressPayload(getCookie('session_token'));
 }
 
 const getList = async () => {
@@ -212,6 +246,7 @@ onMounted(() => {
 
 onBeforeMount(async () => {
     await getList();
+    await getUserSession();
     
     store.dispatch("references/setHeaderTitle", "Digital Attendance Monitoring System");
     store.dispatch("references/setBackgroundColor", "bg-[#CD84F1]");

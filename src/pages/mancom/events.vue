@@ -1,6 +1,6 @@
 <template>
     <v-app-bar color="brown-lighten-2">
-        <div class="text-h6 pl-4 pr-3 text-uppercase">Person</div>
+        <div class="text-h6 pl-4 pr-3 text-uppercase">Event Dashboard</div>
         <v-divider vertical length="40" class="mx-3 my-auto"></v-divider>
         <v-breadcrumbs :items="getBreadcrumbs" class="pr-13 text-subtitle-2">
             <template v-slot:title="{ item }">
@@ -21,9 +21,9 @@
                                 prepend-icon="mdi mdi-plus-circle" 
                                 variant="elevated"
                                 color="green-darken-3"
-                                @click="addItem"
+                                @click="addItem()"
                             >
-                                Add Person
+                                Add Event
                             </v-btn>
                         </v-col>
                         <v-spacer class="d-none d-md-flex" />
@@ -56,18 +56,12 @@
                         }"
                         :loading="loading"
                     >
-                        <template #item.type="{ item }">
-                            {{ item.type == 'R' ? 'Regular' : 'Manual' }}
+                        <template #item.event_date="{ item }">
+                            {{ formatDate(item.event_date) }}
                         </template>
 
-                        <template #item.status="{ item }">
-                            <v-chip
-                                class="ma-2 font-weight-bold"
-                                :color="item.status === 'Active' ? 'green' : 'red'"
-                                label
-                                >
-                                {{ item.status === 'Active' ? 'Active' : 'Archived' }}
-                            </v-chip>
+                        <template #item.event_time="{ item }">
+                            {{ formatTime(item.event_time) }}
                         </template>
 
                         <template #item.created_at="{ item }">
@@ -75,17 +69,17 @@
                         </template>
 
                         <template #item.actions="{ item }">
+                            <v-tooltip text="View Attendance">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn v-bind="props" icon="mdi mdi-clipboard-account" variant="text" color="primary" @click="openAttendance(item)"/>
+                                </template>
+                            </v-tooltip>
                             <v-menu>
                                 <template #activator="{ props }">
                                     <v-btn v-bind="props" icon="mdi-dots-vertical" variant="text" color="primary" />
                                 </template>
                                 <v-list>
-                                    <v-list-item @click="viewItem(item)">
-                                        <v-list-item-title>
-                                            <v-icon start icon="mdi-eye" color="primary" /> View
-                                        </v-list-item-title>
-                                    </v-list-item>
-                                    <v-list-item @click="editItem(item)">
+                                    <v-list-item @click="updateItem(item)">
                                         <v-list-item-title>
                                             <v-icon start icon="mdi-pencil" color="orange" /> Edit
                                         </v-list-item-title>
@@ -103,11 +97,8 @@
             </v-card>
         </v-container>
     </v-main>
-
-    <CreatePersonModal v-if="store.getters['modals/activeModal'] === 'create-person-modal'" />
-    <UpdatePersonModal v-if="store.getters['modals/activeModal'] === 'update-person-modal'" />
-    <DeletePersonModal v-if="store.getters['modals/activeModal'] === 'delete-person-modal'" />
-    <ViewPersonModal v-if="store.getters['modals/activeModal'] === 'view-person-modal'" />
+    <CreateEventModal v-if="store.getters['modals/activeModal'] === 'create-event-modal'" />
+    <UpdateEventModal v-if="store.getters['modals/activeModal'] === 'update-event-modal'" />
 </template>
 <script setup>
 import { onBeforeMount, ref, onMounted, computed } from "vue";
@@ -116,10 +107,8 @@ import { useRouter, useRoute } from "vue-router";
 import { useDisplay } from "vuetify";
 import pako from "pako";
 
-import CreatePersonModal from "@/components/setup/person/CreatePersonModal.vue";
-import UpdatePersonModal from "@/components/setup/person/UpdatePersonModal.vue";
-import DeletePersonModal from "@/components/setup/person/DeletePersonModal.vue";
-import ViewPersonModal from "@/components/setup/person/ViewPersonModal.vue";
+import CreateEventModal from "@/components/mancom/event/CreateEventModal.vue";
+import UpdateEventModal from "@/components/mancom/event/UpdateEventModal.vue";
 
 const store = useStore();
 const router = useRouter();
@@ -136,17 +125,17 @@ const model = reactive({
 
 const getBreadcrumbs = [
     { title: 'Home', disabled: false, href: '/Main-Menu' },
-    { title: 'System Setup', disabled: true, href: 'breadcrumbs_link_1' },
-    { title: 'Person', disabled: false, href: '' },
+    { title: 'Management Committee', disabled: true, href: 'breadcrumbs_link_1' },
+    { title: 'Meeting Dashboard', disabled: false, href: `/Management-Committee/Meetings` },
+    { title: 'Event Dashboard', disabled: false, href: '' },
 ];
 
 const headers = [
-    { title: 'Person No.', key: 'sys_id', class: 'text-center' },
-    { title: 'Fullname', key: 'fullname', class: 'text-center' },
-    { title: 'Sex', key: 'sex', class: 'text-center' },
-    { title: 'Type', key: 'type', class: 'text-center' },
-    { title: 'Agency', key: 'agency_details.abbr', sortable: false, class: 'text-center' },
-    { title: 'Status', key: 'status', sortable: false, class: 'text-center' },
+    { title: 'Event No.', key: 'sys_id', class: 'text-center' },
+    { title: 'Title', key: 'event_title', class: 'text-center' },
+    { title: 'Venue', key: 'event_venue', class: 'text-center' },
+    { title: 'Date', key: 'event_date', class: 'text-center' },
+    { title: 'Time', key: 'event_time', class: 'text-center' },
     { title: 'Created At', key: 'created_at', sortable: false, class: 'text-center' },
     { title: 'Actions', key: 'actions', sortable: false, class: 'text-center' }
 ];
@@ -154,7 +143,7 @@ const headers = [
 const search = ref("");
 const selected = ref([]);
 const page = ref(1);
-const itemsPerPage = ref(10);
+const itemsPerPage = ref(5);
 
 const filteredItems = computed(() => {
     if (!search.value) return items.value;
@@ -165,28 +154,46 @@ const filteredItems = computed(() => {
     );
 });
 
+const formatTime = (timeString) => {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    return `${hours}${minutes}H`;
+};
+
+const formatDate = (dateString) => {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    const options = {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    };
+
+    return date.toLocaleDateString('en-US', options);
+};
+
 const addItem = () => {
     store.dispatch("modals/open", {
-        name: "create-person-modal",
+        name: "create-event-modal",
         params: {
-            title: "Add Person",
-            action: "person/save",
+            title: "Add event",
+            action: "event/save",
             confirmButtonText: "Save",
             cancelButtonText: "Cancel",
+            meeting_id: route.params.id,
             user: getFullNameInitial(model.userDetails),
         },
     });
 }
 
-const viewItem = (item) => {
+const updateItem = (item) => {
     store.dispatch("modals/open", {
-        name: "view-person-modal",
+        name: "update-event-modal",
         params: {
-            title: "View Person Details",
-            message: "Are you sure you want to deactivate this Person?",
-            toastMessage: "Person has been deactivated successfully.",
-            action: "",
-            confirmButtonText: "Delete",
+            title: "Update Event",
+            action: "event/update",
+            confirmButtonText: "Update",
             cancelButtonText: "Cancel",
             actionParams: item,
             user: getFullNameInitial(model.userDetails),
@@ -194,33 +201,13 @@ const viewItem = (item) => {
     });
 }
 
-const editItem = (item) => {
-    store.dispatch("modals/open", {
-        name: "update-person-modal",
-        params: {
-            title: "Update Person",
-            action: "person/update",
-            confirmButtonText: "Save",
-            cancelButtonText: "Cancel",
-            actionParams: item,
-            user: getFullNameInitial(model.userDetails),
-        },
-    });
-}
-
-const deleteItem = (item) => {
-    store.dispatch("modals/open", {
-        name: "delete-person-modal",
-        params: {
-            title: "",
-            message: "Are you sure you want to deactivate this Person?",
-            toastMessage: "Person has been deactivated successfully.",
-            action: "person/delete",
-            confirmButtonText: "Delete",
-            cancelButtonText: "Cancel",
-            actionParams: item,
-            user: getFullNameInitial(model.userDetails),
-        },
+const openAttendance = (item) => {
+    router.push({ 
+        name: 'Man-com-attendance', 
+        params: { 
+            id: item.meeting_details.id, 
+            eventId: item.event_id,
+        } 
     });
 }
 
@@ -241,11 +228,6 @@ const decompressPayload = (base64String) => {
   let json = pako.inflate(bytes, { to: "string" });
 
   return JSON.parse(json);
-}
-
-const getUserSession = () => {
-    model.userDetails = decompressPayload(getCookie('session_user'));
-    model.tokenDetails = decompressPayload(getCookie('session_token'));
 }
 
 const getFullNameInitial = (user) => {
@@ -276,9 +258,14 @@ const getFullNameInitial = (user) => {
     return nameParts.join(' ').trim();
 };
 
+const getUserSession = () => {
+    model.userDetails = decompressPayload(getCookie('session_user'));
+    model.tokenDetails = decompressPayload(getCookie('session_token'));
+}
+
 const getList = async () => {
     try {
-        const response = await axios.get("v1/person");
+        const response = await axios.get("v1/events");
         items.value = response.data.data;
 
         console.log(items.value);
@@ -288,15 +275,15 @@ const getList = async () => {
 };
 
 onMounted(() => {
-    that.emitter.on("person/save", async () => {
+    that.emitter.on("event/save", async () => {
         await getList();
     });
 
-    that.emitter.on("person/update", async () => {
+    that.emitter.on("event/update", async () => {
         await getList();
     });
 
-    that.emitter.on("person/destroy", async () => {
+    that.emitter.on("destroy", async () => {
         await getList();
     });
 })
@@ -305,7 +292,7 @@ onBeforeMount(async () => {
     await getList();
     await getUserSession();
     
-    store.dispatch("references/setHeaderTitle", "Digital Attendance Monitoring System");
+    store.dispatch("references/setHeaderTitle", "Information System Template");
     store.dispatch("references/setBackgroundColor", "bg-[#CD84F1]");
 });
 </script>

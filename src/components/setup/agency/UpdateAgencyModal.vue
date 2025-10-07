@@ -84,7 +84,8 @@ const params = reactive({
 	confirmButtonClass: modalParams.value.confirmButtonClass,
 	cancelButtonClass: modalParams.value.cancelButtonClass,
 	type: modalParams.value.type,
-    actionParams: modalParams.value.actionParams
+    actionParams: modalParams.value.actionParams,
+    user: modalParams.value.user,
 })
 
 function getAcronym(name) {

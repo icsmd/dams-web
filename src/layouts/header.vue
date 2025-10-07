@@ -10,7 +10,7 @@
                 <img src="/img/NICA.png" width=40 height=40 style="margin-left: 5px"></img>
             </template>
             <v-app-bar-title :backgroundColor="backgroundColor">
-                DIGITAL ATTENDANCE MONITORING SYSTEM
+                ELECTRONIC ATTENDANCE MANAGEMENT SYSTEM
             </v-app-bar-title>
             <template v-slot:append>
                 <v-btn icon="mdi mdi-bell"></v-btn>
@@ -45,8 +45,8 @@
             <v-list-item
                 lines="two"
                 prepend-avatar="/img/user.jpg"
-                subtitle="201810082"
-                title="Juan Dela Cruz"
+                :subtitle="model.userPid"
+                :title="model.userFirstName + ' ' + model.userLastName"
             ></v-list-item>
             </template>
 
@@ -90,14 +90,26 @@
 </template>
 <script setup>
 import { useStore } from "vuex";
-import { computed, ref } from "vue";
+import { computed, ref, reactive, onBeforeMount } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
+import pako from "pako";
 
 const store = useStore();
 const router = useRouter();
 const drawer = ref(true);
 const display = useDisplay();
+const headerTitle = computed(() => store.getters['references/headerTitle']);
+const route = computed(() => store.getters['references/route']);
+const backgroundColor = computed(() => store.getters['references/backgroundColor']);
+
+const model = reactive({
+    userDetails: null,
+    userFirstName: null,
+    userLastName: null,
+    userPid: null,
+    tokenDetails: null
+});
 
 const menuItems = [
     { title: "User Manual", icon: "mdi-information", routeName: "not-found" },
@@ -115,17 +127,64 @@ const menuItems = [
     },
 ];
 
-const headerTitle = computed(() => store.getters['references/headerTitle']);
-const route = computed(() => store.getters['references/route']);
-const backgroundColor = computed(() => store.getters['references/backgroundColor']);
+const logout = async() => {
+    try {
+        let tokenId = model.tokenDetails.token_id;
+        let accessToken = model.tokenDetails.token;
+        let response = await axios.put("http://ciamis.infosys.local:8001/api/v1/auth/unauthenticate/" + tokenId, {}, 
+            {
+                headers: {
+                Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
+        document.cookie = `session_user=; Max-Age=0; path=/;`;
+        document.cookie = `session_token=; Max-Age=0; path=/;`;
 
-const logout = () => {
-    router.push({ name: 'Login' });
+        router.push({ name: 'Login' });
+    } catch (error) {
+        let customErrMsg = error.response.data.message;
+        Toast.fire({
+            icon: "error",
+            title: customErrMsg,
+        });
+    };
 }
 
 const openProfile = () => {
     router.push({ name: 'profile' });
 }
+
+const getUserSession = () => {
+    model.userDetails = decompressPayload(getCookie('session_user'));
+    model.tokenDetails = decompressPayload(getCookie('session_token'));
+    model.userFirstName = model.userDetails.first_name;
+    model.userLastName = model.userDetails.last_name;
+    model.userPid = model.userDetails.pid;
+}
+
+const getCookie = (name) => {
+    let nameEQ = name + "=";
+    let ca = document.cookie.split(';');
+    for(let i=0;i < ca.length;i++) {
+        let c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+const decompressPayload = (base64String) => {
+  let binary = atob(base64String);
+  let bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  let json = pako.inflate(bytes, { to: "string" });
+
+  return JSON.parse(json);
+}
+
+onBeforeMount(async () => {
+    await getUserSession();
+});
 </script>
 
 <style scoped>

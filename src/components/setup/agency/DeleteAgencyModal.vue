@@ -71,6 +71,7 @@ const params = reactive({
 	borderTopClass: modalParams.value.borderTopClass,
 	confirmButtonClass: modalParams.value.confirmButtonClass,
 	cancelButtonClass: modalParams.value.cancelButtonClass,
+    user: modalParams.value.user,
 })
 
 const closeModal = () => {

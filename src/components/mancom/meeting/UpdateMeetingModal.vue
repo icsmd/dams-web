@@ -6,7 +6,7 @@
             <v-form ref="form" @submit.prevent="validateAndSubmit">
                 <v-card-text>
                     <div class="d-flex justify-space-between align-center text-subtitle-1 font-weight-bold text-uppercase">
-                        {{ params && params.title ? params.title : 'Add Event' }}
+                        {{ params && params.title ? params.title : 'Add meeting' }}
                         <v-icon icon="mdi mdi-close" color="red-darken-4" class="cursor-pointer" @click="closeModal()"></v-icon>
                     </div>
                     <div class="d-flex flex-col mb-3">
@@ -16,64 +16,46 @@
                     <v-row class="mb-2 mt-2" dense>
                         <v-col>
                             <v-text-field
-                                v-model="model.designation"
+                                v-model="model.name"
                                 variant="outlined"
-                                class="mb-2"
-                                :rules="[v => !!v || 'Designation is required']"
+                                :rules="[v => !!v || 'Prefix is required']"
+                                class="mb-3"
                                 required
                             >
                                 <template v-slot:label>
                                     <div>
-                                        Designation<span class="text-red">*</span>
+                                        Meeting Title<span class="text-red">*</span>
                                     </div>
                                 </template>
                             </v-text-field>
+
+                            <v-textarea 
+                                v-model="model.desc"
+                                clearable 
+                                :rules="[v => !!v || 'Prefix is required']"
+                                variant="outlined"
+                            >
+                                <template v-slot:label>
+                                    <div>
+                                        Meeting Description<span class="text-red">*</span>
+                                    </div>
+                                </template>
+                            </v-textarea>
+
+                            <v-checkbox label="Default Acronym" v-model="isReadOnly"></v-checkbox>
 
                             <v-text-field
-                                v-model="model.office"
+                                v-model="model.acronym"
                                 variant="outlined"
-                                class="mb-2"
-                                :rules="[v => !!v || 'Office is required']"
-                                required
+                                :readonly="isReadOnly"
+                                :rules="[rules.acronymMax, v => !!v || 'Prefix is required']"
                             >
                                 <template v-slot:label>
                                     <div>
-                                        Office<span class="text-red">*</span>
+                                        Meeting Abbreviation<span class="text-red">*</span>
                                     </div>
                                 </template>
                             </v-text-field>
-
-                            <v-combobox
-                                clearable
-                                :items="persons"
-                                v-model="model.person"
-                                :item-title="item => item.fullname"
-                                variant="outlined"
-                                :rules="[v => !!v || 'Person is required']"
-                                class="mb-2"
-                            >
-                                <template v-slot:label>
-                                    <div>
-                                        Person<span class="text-red">*</span>
-                                    </div>
-                                </template>
-                            </v-combobox>
-
-                            <v-combobox
-                                clearable
-                                :items="meetings"
-                                v-model="model.meeting"
-                                :item-title="item => item.meeting_title"
-                                variant="outlined"
-                                :rules="[v => !!v || 'Meeting is required']"
-                                class="mb-2"
-                            >
-                                <template v-slot:label>
-                                    <div>
-                                        Meeting<span class="text-red">*</span>
-                                    </div>
-                                </template>
-                            </v-combobox>
                         </v-col>
                     </v-row>
                     <div class="d-flex justify-end align-center">
@@ -110,8 +92,7 @@ const loading = ref(false);
 const isReadOnly = ref(true);
 const name = ref('');
 const form = ref(null);
-const persons = ref([]);
-const meetings = ref([]);
+const fectchData = ref([])
 
 const modalState = computed(() => {
 	return store.getters['modals/activeModal']
@@ -125,11 +106,15 @@ const model = reactive({
 	dialog: true,
 	isLoading: false,
 	isSaved: false,
-	designation: null,
-    office: null,
-    person: null,
-    meeting: null,
+	name: null,
+    desc: null,
+	acronym: null,
+    meeting_id: null,
 })
+
+const rules = {
+	acronymMax: value => (value || '').length <= 10 || 'Acronym must be 10 characters or less',
+}
 
 const params = reactive({
 	title: modalParams.value.title,
@@ -147,6 +132,15 @@ const params = reactive({
     user: modalParams.value.user,
 })
 
+function getAcronym(name) {
+	if (!name) return '';
+    return name
+        .split(' ')
+        .filter(word => word.length > 0)
+        .map(word => word[0].toUpperCase())
+        .join('');
+}
+
 const closeModal = () => {
 	store.dispatch('modals/close')
 }
@@ -156,16 +150,15 @@ const onSubmit = () => {
 
     store
         .dispatch(params.action, {
-            designation: model.designation,
-            office: model.office,
-            meeting_id: model.meeting.meeting_id,
-            person_id: model.person.person_id,
-            status: 'Active',
+            meeting_id: model.meeting_id,
+            meeting_title: model.name,
+            meeting_desc: model.desc,
+            meeting_abbr: model.acronym,
         })
         .then((response) => {
             Toast.fire({
                 icon: 'success',
-                title: 'Designation successfully registered!'
+                title: 'Meeting successfully created!'
             });
 
             that.emitter.emit(params.action);
@@ -191,33 +184,36 @@ const validateAndSubmit = async () => {
     }
 };
 
-const getPersons = async () => {
-    model.isLoading = true; 
+const getData = async () => {
     try {
-        const response = await axios.get("v1/person");
-        persons.value = response.data.data;
+        const response = await axios.get(`v1/meeting/${params.actionParams.meeting_id}`);
+            fectchData.value = response.data.data;
+            model.meeting_id = fectchData.value[0].meeting_id;
+            model.name = fectchData.value[0].meeting_title;
+            model.desc = fectchData.value[0].meeting_desc;
+            model.acronym = fectchData.value[0].meeting_abbr;
     } catch (error) {
         console.error("Error fetching list:", error);
-    } finally {
-        model.isLoading = false;
     }
-}
+};
 
-const getMeetings = async () => {
-    model.isLoading = true; 
-    try {
-        const response = await axios.get("v1/meeting");
-        meetings.value = response.data.data;
-    } catch (error) {
-        console.error("Error fetching list:", error);
-    } finally {
-        model.isLoading = false;
-    }
-}
-
-onBeforeMount(async () => {
-    await getPersons();
-    await getMeetings();
+watch(() => model.name, (newName) => {
+	model.acronym = getAcronym(newName);
 });
 
+watch(() => model.acronym, (newAcronym) => {
+	if(newAcronym !== newAcronym.toUpperCase()) {
+		model.acronym = newAcronym.toUpperCase();
+	}
+});
+
+watch(() => isReadOnly.value, (newValue) => {
+	if (newValue) {
+		model.acronym = getAcronym(model.name)
+	}
+})
+
+onBeforeMount(async () => {
+    await getData();
+});
 </script>
